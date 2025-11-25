@@ -1,103 +1,29 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>ESP32-C3 Mirror Flasher</title>
+<meta charset="utf-8">
+<title>ESP32-C3 Web Flasher</title>
 
-  <!-- Espressif web tools (install-button) -->
-  <script type="module" src="https://unpkg.com/esp-web-tools@9.1.1/dist/web/install-button.js"></script>
+<!-- ESP Web Tools -->
+<script type="module" src="https://unpkg.com/esp-web-tools@10.0.0/dist/web/install-button.js"></script>
 
-  <style>
-    body { background:#0f1720; color:#e6eef6; font-family:Inter,Arial,sans-serif; padding:28px; }
-    .card { max-width:760px; margin:30px auto; background:#0b1220; padding:22px; border-radius:12px; box-shadow:0 8px 30px rgba(0,0,0,.6); }
-    h1 { margin:0 0 8px; font-size:20px; }
-    p.muted { color:#9aa4b2; margin:6px 0 18px; }
-    #log { background:#031025; color:#9fd8ff; padding:12px; height:240px; overflow:auto; border-radius:8px; font-family:monospace; font-size:13px; }
-    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin:14px 0; }
-    .small { color:#9aa4b2; font-size:13px; }
-  </style>
+<style>
+body { font-family: Arial; background:#111; color:#fff; padding:40px; text-align:center; }
+.card { max-width:480px; margin:auto; padding:24px; background:#222; border-radius:12px; }
+button { padding:12px 20px; font-size:18px; }
+</style>
+
 </head>
 <body>
-  <div class="card">
-    <h1>ESP32-C3 Mirror Flasher</h1>
-    <p class="muted">Mirror dari flasher yang sukses. Klik <strong>Connect</strong> lalu <strong>Install</strong>. Firmware otomatis diambil dari server.</p>
 
-    <div class="row">
-      <!-- Tombol install-button akan kita attach manifest dinamis -->
-      <esp-web-install-button id="installBtn"></esp-web-install-button>
-    </div>
+<div class="card">
+  <h2>ESP32-C3 Web Flasher</h2>
+  <p>Klik tombol dibawah untuk flashing</p>
 
-    <p class="small">Pastikan browser: Chrome/Edge/Brave (HTTPS). Masuk bootloader: tahan BOOT → colok USB → lepas BOOT — jika board tidak otomatis, tombol "Install" akan memaksa reset/boot.</p>
+  <esp-web-install-button manifest="manifest.json">
+    <button slot="activate">Flash Firmware</button>
+  </esp-web-install-button>
+</div>
 
-    <pre id="log" aria-live="polite"></pre>
-  </div>
-
-<script>
-(async function(){
-  const logEl = document.getElementById('log');
-  function log(...t){ logEl.textContent += t.join(' ') + '\n'; logEl.scrollTop = logEl.scrollHeight; }
-
-  // === Ubah path ini jika ingin ambil firmware dari lokasi lain ===
-  // Aku pakai file yang sudah ada di lingkungan: /mnt/data/merged-firmware.bin
-  // Saat kamu deploy, letakkan firmware di /firmware/merged-firmware.bin agar URL valid publik.
-  const firmwarePath = "/mnt/data/merged-firmware.bin";
-
-  // Bangun manifest yang MIRIP dengan yang dipakai flasher orang
-  const manifest = {
-    name: "ESP32-C3 Mirror Firmware",
-    version: "1.0.0",
-    builds: [
-      {
-        chipFamily: "ESP32-C3",
-        // single-file approach (firmware.bin) -> offset 0
-        parts: [
-          { path: firmwarePath, offset: 0 }
-        ],
-        // optional: set default flash mode / size if needed:
-        // flash: { size: "4MB", mode: "qio" }
-      }
-    ],
-    // Add meta so install-button shows name/version
-    description: "Mirror flasher auto-generated manifest"
-  };
-
-  try {
-    const manifestJson = JSON.stringify(manifest, null, 2);
-    const blob = new Blob([manifestJson], { type: 'application/json' });
-    const manifestUrl = URL.createObjectURL(blob);
-
-    // attach to install button
-    const btn = document.getElementById('installBtn');
-    btn.setAttribute('manifest', manifestUrl);
-
-    // Event listeners for debugging
-    btn.addEventListener('esp-web-install-start', () => {
-      log('[install] start — attempting init and bootloader handshake...');
-    });
-    btn.addEventListener('esp-web-install-progress', (ev) => {
-      log('[progress] ' + JSON.stringify(ev.detail));
-    });
-    btn.addEventListener('esp-web-install-complete', () => {
-      log('[install] complete — device should reboot and run program.');
-      // release manifest blob after success
-      setTimeout(()=> URL.revokeObjectURL(manifestUrl), 5000);
-    });
-    btn.addEventListener('esp-web-install-error', (ev) => {
-      let d = ev.detail || {};
-      log('[install] ERROR: ' + (d.message || JSON.stringify(d)));
-      // Common extra hints for user
-      if (d && d.message && /initialize/i.test(d.message)) {
-        log('HINT: Pastikan device masuk ROM bootloader (tahan BOOT + colok USB) atau unpair device pada chrome://bluetooth-internals.');
-      }
-    });
-
-    log('Manifest attached. Firmware path (raw): ' + firmwarePath);
-    log('Tip: untuk deploy ke Vercel, letakkan firmware di /firmware/merged-firmware.bin dan ubah firmwarePath jika perlu.');
-  } catch (e) {
-    log('ERROR while creating manifest: ' + e);
-  }
-})();
-</script>
 </body>
 </html>
