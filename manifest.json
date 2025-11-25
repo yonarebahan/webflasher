@@ -6,16 +6,8 @@
       "chipFamily": "ESP32-C3",
       "parts": [
         {
-          "path": "firmware/bootloader.bin",
+          "path": "firmware/merged-firmware.bin",
           "offset": 0
-        },
-        {
-          "path": "firmware/partitions.bin",
-          "offset": 32768
-        },
-        {
-          "path": "firmware/app.bin",
-          "offset": 65536
         }
       ]
     }
