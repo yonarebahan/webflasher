@@ -2,77 +2,61 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>Simple ESP32-C3 Web Flasher</title>
+<title>ESP32-C3 Simple Web Flasher</title>
+<script src="https://unpkg.com/esptool-js/bundle.js"></script>
 <style>
-body {
-  background: #111;
-  color: #fff;
-  font-family: Arial;
-  text-align: center;
-  padding: 30px;
-}
-.box {
-  margin: auto;
-  max-width: 480px;
-  padding: 20px;
-  background: #222;
-  border-radius: 10px;
-}
-button {
-  padding: 10px 20px;
-  font-size: 16px;
-  margin: 10px;
-}
+body { background:#111; color:#fff; font-family:Arial; text-align:center; padding:40px; }
+.box { background:#222; padding:20px; border-radius:10px; width:420px; margin:auto; }
+button { padding:10px 20px; font-size:16px; margin:5px; }
+pre { background:#000; padding:10px; height:200px; overflow:auto; text-align:left; }
 </style>
 </head>
 <body>
 
 <div class="box">
-<h2>Simple ESP32-C3 Web Flasher</h2>
-<input type="file" id="binfile" accept=".bin"><br><br>
+<h2>ESP32-C3 Simple Web Flasher</h2>
 <button id="connectBtn">Connect</button>
-<button id="flashBtn">Flash</button>
-
-<pre id="log" style="text-align:left; background:#000; padding:15px; height:200px; overflow:auto;"></pre>
+<button id="flashBtn">Flash Firmware</button>
+<pre id="log"></pre>
 </div>
 
 <script>
-let port, writer;
+let device;
+let esploader;
 
-function log(msg) {
-  document.getElementById("log").textContent += msg + "\n";
+function log(t){
+  document.getElementById("log").textContent += t + "\n";
 }
 
 document.getElementById("connectBtn").onclick = async () => {
   try {
-    port = await navigator.serial.requestPort();
-    await port.open({ baudRate: 115200 });
-    writer = port.writable.getWriter();
-    log("Connected to ESP32-C3.");
-  } catch (e) {
-    log("Error: " + e);
-  }
+    device = await navigator.serial.requestPort();
+    await device.open({ baudRate: 115200 });
+    esploader = new esptooljs.EspLoader(device, {baudrate:115200, debug:true});
+    await esploader.main();
+    log("Connected to bootloader!");
+  } catch(e){ log("ERR: " + e); }
 };
 
 document.getElementById("flashBtn").onclick = async () => {
-  const fileInput = document.getElementById("binfile");
-  if (!fileInput.files.length) {
-    alert("Pilih file .bin dulu.");
-    return;
-  }
+  try {
+    log("Loading firmware...");
+    const file = await fetch("firmware/merged-firmware.bin");
+    const buf = new Uint8Array(await file.arrayBuffer());
 
-  const file = await fileInput.files[0].arrayBuffer();
-  const data = new Uint8Array(file);
+    log("Erasing flash...");
+    await esploader.flash_id();
+    await esploader.erase_flash();
 
-  log("Sending binary... (" + data.length + " bytes)");
+    log("Flashing " + buf.length + " bytes...");
+    await esploader.program(buf, 0x0);
 
-  for (let i = 0; i < data.length; i++) {
-    await writer.write(data.slice(i, i+1));
-    if (i % 4096 === 0) log("Sent " + i + " bytes...");
-  }
-
-  log("Done!");
+    log("DONE! Rebooting...");
+    await esploader.reset();
+    log("Success!");
+  } catch(e){ log("ERR: " + e); }
 };
 </script>
+
 </body>
 </html>
