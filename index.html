@@ -1,100 +1,63 @@
 <!DOCTYPE html>
-<html lang="id">
+<html>
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>ESP32-C3 Web Flasher (Simple, WORKS)</title>
+<meta charset="utf-8">
+<title>ESP32-C3 Simple Flasher</title>
 
-  <!-- ESP Web Tools install-button (official) -->
-  <script type="module" src="https://unpkg.com/esp-web-tools@9.1.1/dist/web/install-button.js"></script>
+<!-- ESP Web Tools official -->
+<script type="module" src="https://unpkg.com/esp-web-tools@9.1.1/dist/web/install-button.js"></script>
 
-  <style>
-    :root { --bg: #0f1720; --card:#0b1220; --muted:#9aa4b2; --accent:#60a5fa; }
-    body { background:var(--bg); color:#e6eef6; font-family:Inter,Arial,Helvetica,sans-serif; padding:24px; }
-    .card { max-width:720px; margin:40px auto; background:var(--card); border-radius:12px; padding:22px; box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
-    h1 { margin:0 0 8px 0; font-size:20px; }
-    p.muted { color:var(--muted); margin:6px 0 18px 0; }
-    #log { background:#031025; color:#9fd8ff; padding:12px; height:240px; overflow:auto; border-radius:8px; font-family:monospace; font-size:13px; }
-    .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-bottom:12px; }
-    .note { font-size:13px; color:var(--muted); }
-    .small { font-size:13px; color:var(--muted); }
-  </style>
+<style>
+body { background:#111; color:#fff; font-family:Arial; padding:40px; text-align:center; }
+.card { max-width:480px; margin:auto; padding:24px; background:#222; border-radius:12px; }
+pre { background:#000; padding:12px; height:200px; overflow:auto; text-align:left; border-radius:8px; }
+button { padding:10px 20px; margin-top:10px; font-size:16px; }
+</style>
+
 </head>
 <body>
-  <div class="card">
-    <h1>ESP32-C3 Web Flasher — Simple</h1>
-    <p class="muted">Klik <strong>Connect</strong> lalu <strong>Install</strong>. Firmware otomatis diambil dari server (tidak perlu pilih .bin).</p>
+<div class="card">
+<h2>ESP32-C3 Simple Flasher</h2>
+<p>Klik Connect → Install. otomatis flash <code>firmware.bin</code></p>
 
-    <div class="row">
-      <!-- install-button akan di-attach ke manifest blob di script -->
-      <esp-web-install-button id="installBtn"></esp-web-install-button>
-    </div>
+<esp-web-install-button id="flashBtn"></esp-web-install-button>
 
-    <p class="note">Pastikan board: ESP32-C3 SuperMini (native USB). Masuk bootloader: <em>tahan BOOT → colok USB → lepas BOOT</em>.</p>
-
-    <div id="log" aria-live="polite"></div>
-    <p class="small">Catatan: manifest dibangun dinamis dan menunjuk ke <code>/mnt/data/merged-firmware.bin</code>.</p>
-  </div>
+<pre id="log"></pre>
+</div>
 
 <script>
-/*
-  Dynamic manifest + install-button approach.
-  IMPORTANT: firmwarePath must be the uploaded file path in the environment.
-  We're using the local path you uploaded earlier; hosting will rewrite it to a URL.
-*/
-(async function(){
-  const logEl = document.getElementById('log');
-  function log(...args){ logEl.textContent += args.join(' ') + '\n'; logEl.scrollTop = logEl.scrollHeight; }
+(async () => {
+  const firmwareUrl = "firmware/firmware.bin";  // auto-load dari folder kamu
 
-  // <-- PATH KE FILE YANG SUDAH KAMU UPLOAD; jangan ubah kalau kamu
-  // ingin aku yang mengubah path menjadi URL ketika men-generate ZIP / deploy.
-  const firmwarePath = "/mnt/data/merged-firmware.bin";
-
-  // Build manifest object for ESP Web Tools.
+  // Build manifest minimal (1 file aja)
   const manifest = {
-    name: "ESP32-C3 Auto Firmware",
-    version: "1.0.0",
-    builds: [
+    "name": "ESP32-C3 Simple",
+    "version": "1.0",
+    "builds": [
       {
-        chipFamily: "ESP32-C3",
-        parts: [
-          { path: firmwarePath, offset: 0 }
+        "chipFamily": "ESP32-C3",
+        "parts": [
+          { "path": firmwareUrl, "offset": 0 }
         ]
       }
     ]
   };
 
-  try {
-    // Create blob URL for manifest (install-button accepts manifest URL)
-    const json = JSON.stringify(manifest, null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const manifestUrl = URL.createObjectURL(blob);
+  const blob = new Blob([JSON.stringify(manifest)], { type: "application/json" });
+  const manifestURL = URL.createObjectURL(blob);
 
-    // Attach manifest URL to the install-button element
-    const btn = document.getElementById('installBtn');
-    btn.setAttribute('manifest', manifestUrl);
+  const installer = document.getElementById("flashBtn");
+  installer.setAttribute("manifest", manifestURL);
 
-    // Optional: add event listeners for logging
-    btn.addEventListener('esp-web-install-start', () => log('[install] start'));
-    btn.addEventListener('esp-web-install-progress', (ev) => {
-      log(`[progress] ${JSON.stringify(ev.detail)}`);
-    });
-    btn.addEventListener('esp-web-install-complete', () => log('[install] complete — device should reboot'));
-    btn.addEventListener('esp-web-install-error', (ev) => {
-      log('[install] error: ' + (ev.detail && ev.detail.message ? ev.detail.message : JSON.stringify(ev.detail)));
-    });
+  const log = (msg) => {
+    document.getElementById("log").textContent += msg + "\n";
+  };
 
-    log('Manifest created and attached to button.');
-    log('Firmware path (raw): ' + firmwarePath);
-    log('Notes: Make sure browser is HTTPS and you run this page from the deployed Vercel domain.');
-
-    // Release manifest blob URL after a while (the element will fetch it immediately on click)
-    setTimeout(() => URL.revokeObjectURL(manifestUrl), 60_000);
-
-  } catch (e) {
-    log('ERROR building manifest: ' + e);
-  }
+  installer.addEventListener("esp-web-install-start", () => log("[START]"));
+  installer.addEventListener("esp-web-install-error", (e) => log("[ERROR] " + e.detail.message));
+  installer.addEventListener("esp-web-install-complete", () => log("[DONE] Firmware installed!"));
 })();
 </script>
+
 </body>
 </html>
