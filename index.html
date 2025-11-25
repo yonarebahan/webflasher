@@ -1,29 +1,75 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="utf-8">
-<title>ESP32-C3 Web Flasher</title>
+  <meta charset="UTF-8" />
+  <title>yona FIRMWARE</title>
 
-<!-- ESP Web Tools -->
-<script type="module" src="https://unpkg.com/esp-web-tools@10.0.0/dist/web/install-button.js"></script>
+  <script type="module" src="https://unpkg.com/esp-web-tools@10.0.0/dist/web/install-button.js?module"></script>
 
-<style>
-body { font-family: Arial; background:#111; color:#fff; padding:40px; text-align:center; }
-.card { max-width:480px; margin:auto; padding:24px; background:#222; border-radius:12px; }
-button { padding:12px 20px; font-size:18px; }
-</style>
-
+  <style>
+    body {
+      background: #000;
+      color: #fff;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      padding-top: 60px;
+    }
+    .box {
+      background: #111;
+      width: 420px;
+      margin: auto;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 0 25px rgba(255,255,255,0.05);
+    }
+    h1 {
+      margin-bottom: 10px;
+      font-size: 28px;
+      font-weight: bold;
+    }
+    .tutorial {
+      text-align: left;
+      background: #222;
+      padding: 15px;
+      margin-top: 20px;
+      font-size: 14px;
+      border-radius: 8px;
+      line-height: 1.5;
+      border-left: 4px solid #4fa3ff;
+    }
+    .btn-flash {
+      background: #007bff;
+      border: none;
+      padding: 12px 28px;
+      color: white;
+      font-size: 18px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-top: 25px;
+    }
+    .btn-flash:hover {
+      background: #3399ff;
+    }
+  </style>
 </head>
+
 <body>
+  <div class="box">
+    <h1>yona FIRMWARE</h1>
+    <p>Klik tombol di bawah untuk mulai flashing</p>
 
-<div class="card">
-  <h2>ESP32-C3 Web Flasher</h2>
-  <p>Klik tombol dibawah untuk flashing</p>
+    <div class="tutorial">
+      <b>Cara Masuk Bootloader:</b><br><br>
+      1. Tahan tombol <b>BOOT</b><br>
+      2. Sambil tahan BOOT → tekan <b>RESET</b><br>
+      3. Lepas tombol <b>RESET</b><br>
+      4. Lepas tombol <b>BOOT</b><br><br>
+      Setelah mode bootloader aktif, klik tombol Flash Firmware.
+    </div>
 
-  <esp-web-install-button manifest="manifest.json">
-    <button slot="activate">Flash Firmware</button>
-  </esp-web-install-button>
-</div>
-
+    <esp-web-install-button manifest="manifest.json">
+      <button slot="activate" class="btn-flash">Flash Firmware</button>
+    </esp-web-install-button>
+  </div>
 </body>
 </html>
